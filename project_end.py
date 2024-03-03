@@ -12,14 +12,10 @@ class Field:
 
 
 class Name(Field):
-    """Class for first and last name."""
-
     pass
 
 
-class Phone(Field):
-    """Class for phone number with validation."""
-
+class PhoneNumber(Field):
     def __init__(self, value):
         if not self.validate_phone(value):
             raise ValueError("Niepoprawny numer telefonu")
@@ -27,14 +23,11 @@ class Phone(Field):
 
     @staticmethod
     def validate_phone(value):
-        """Checks if the phone number is valid (9 digits, format 123456789)."""
         pattern = re.compile(r"^\d{9}$")
         return pattern.match(value) is not None
 
 
-class Email(Field):
-    """Class for email address with validation."""
-
+class EmailAddress(Field):
     def __init__(self, value):
         if not self.validate_email(value):
             raise ValueError("Niepoprawny adres email")
@@ -42,22 +35,18 @@ class Email(Field):
 
     @staticmethod
     def validate_email(value):
-        """Checks if the email is valid."""
         pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
         return pattern.match(value) is not None
 
 
-class Birthday(Field):
-    """Class for birthday with validation."""
-
+class BirthDate(Field):
     def __init__(self, value):
-        if not self.validate_birthday(value):
+        if not self.validate_birthdate(value):
             raise ValueError("Niepoprawna data urodzenia")
         super().__init__(value)
 
     @staticmethod
-    def validate_birthday(value):
-        """Checks if the birthday is valid."""
+    def validate_birthdate(value):
         try:
             datetime.strptime(value, "%Y-%m-%d")
             return True
@@ -66,116 +55,125 @@ class Birthday(Field):
 
 
 class Address(Field):
-    """Class for residential address."""
-
     def __init__(self, street, city, postal_code, country):
         self.street = street
         self.city = city
         self.postal_code = postal_code
         self.country = country
-        super().__init__(f"{street}, {city}, {postal_code}, {country}")
+        super().__init__(value=f"{street}, {city}, {postal_code}, {country}")
 
 
 class Record:
-    """Class for an entry in the address book."""
-
-    def __init__(self, name: Name, birthday: Birthday = None, address: Address = None):
+    def __init__(self, name: Name, birthdate: BirthDate = None):
+        self.id = None  # The ID will be assigned by AddressBook
         self.name = name
-        self.phones = []
-        self.emails = []
-        self.birthday = birthday
+        self.phone_numbers = []
+        self.email_addresses = []
+        self.birthdate = birthdate
+        self.address = None  # Add a new property to store the address
+
+    def add_address(self, address: Address):
+        """Adds an address."""
         self.address = address
-        self.notes = []
 
-    def add_phone(self, phone: Phone):
+    def add_phone_number(self, phone_number: PhoneNumber):
         """Adds a phone number."""
-        self.phones.append(phone)
+        self.phone_numbers.append(phone_number)
 
-    def remove_phone(self, phone: Phone):
+    def remove_phone_number(self, phone_number: PhoneNumber):
         """Removes a phone number."""
-        self.phones.remove(phone)
+        self.phone_numbers.remove(phone_number)
 
-    def edit_phone(self, old_phone: Phone, new_phone: Phone):
+    def edit_phone_number(
+        self, old_phone_number: PhoneNumber, new_phone_number: PhoneNumber
+    ):
         """Changes a phone number."""
-        self.remove_phone(old_phone)
-        self.add_phone(new_phone)
+        self.remove_phone_number(old_phone_number)
+        self.add_phone_number(new_phone_number)
 
-    def add_email(self, email: Email):
+    def add_email_address(self, email_address: EmailAddress):
         """Adds an email address."""
-        self.emails.append(email)
+        self.email_addresses.append(email_address)
 
-    def remove_email(self, email: Email):
+    def remove_email_address(self, email_address: EmailAddress):
         """Removes an email address."""
-        self.emails.remove(email)
+        self.email_addresses.remove(email_address)
 
-    def edit_email(self, old_email: Email, new_email: Email):
+    def edit_email_address(
+        self, old_email_address: EmailAddress, new_email_address: EmailAddress
+    ):
         """Changes an email address."""
-        self.remove_email(old_email)
-        self.add_email(new_email)
+        self.remove_email_address(old_email_address)
+        self.add_email_address(new_email_address)
 
     def edit_name(self, new_name: Name):
         """Changes the first and last name."""
         self.name = new_name
 
-    def days_to_birthday(self):
-        """Returns the number of days to the next birthday."""
-        if not self.birthday or not self.birthday.value:
+    def days_to_birthdate(self):
+        """Returns the number of days to the next birthdate."""
+        if not self.birthdate or not self.birthdate.value:
             return "Brak daty urodzenia"
         today = datetime.now()
-        bday = datetime.strptime(self.birthday.value, "%Y-%m-%d")
+        bday = datetime.strptime(self.birthdate.value, "%Y-%m-%d")
         next_birthday = bday.replace(year=today.year)
         if today > next_birthday:
             next_birthday = next_birthday.replace(year=today.year + 1)
-        days = (next_birthday - today).days
-        return days
-
-    def edit_address(self, new_address: Address):
-        """Changes the address."""
-        self.address = new_address
+        return (next_birthday - today).days
 
     def __str__(self):
-        """Returns a string representation of the entry, now including address."""
-        phones = ", ".join(phone.value for phone in self.phones)
-        emails = ", ".join(email.value for email in self.emails)
-        birthday_str = f", Urodziny: {self.birthday.value}" if self.birthday else ""
-        days_to_bday_str = (
-            f", Dni do urodzin: {self.days_to_birthday()}" if self.birthday else ""
+        """Returns a string representation of the entry, including the ID."""
+        phone_numbers = ", ".join(
+            phone_number.value for phone_number in self.phone_numbers
         )
-        address_str = f", Adres: {self.address.value}" if self.address else ""
+        email_addresses = ", ".join(
+            email_address.value for email_address in self.email_addresses
+        )
+        birthdate_str = f", Urodziny: {self.birthdate.value}" if self.birthdate else ""
+        days_to_birthdate_str = (
+            f", Dni do urodzin: {self.days_to_birthdate()}" if self.birthdate else ""
+        )
+        address_str = f"\nAdres: {self.address.value}" if self.address else ""
         return (
-            f"Imię i nazwisko: {self.name.value}, "
-            f"Telefony: {phones}, Email: {emails}{birthday_str}{days_to_bday_str}{address_str}"
+            f"ID: {self.id}, Imię i nazwisko: {self.name.value}, "
+            f"Numery telefonów: {phone_numbers}, Adresy email: {email_addresses}{birthdate_str}{days_to_birthdate_str}{address_str}"
         )
-
-    def add_note(self, note):
-        """Adds a note to the record."""
-        self.notes.append(note)
-
-    def show_notes(self):
-        """Shows all notes associated with the record."""
-        if not self.notes:
-            print("No notes for this contact.")
-        else:
-            print("Notes:")
-            for note in self.notes:
-                print(note)
 
 
 class AddressBook(UserDict):
-    """Class for the address book."""
+    def __init__(self):
+        super().__init__()
+        self.next_id = 1
+        self.free_ids = set()
 
     def add_record(self, record: Record):
-        """Adds an entry to the address book."""
-        self.data[record.name.value] = record
-        print("Dodano wpis.")
-
-    def show_all_records(self):
-        if not self.data:
-            print("Brak kontaktów")
+        """Adds an entry to the address book with ID management."""
+        while self.next_id in self.data or self.next_id in self.free_ids:
+            self.next_id += 1
+        if self.free_ids:
+            record.id = min(self.free_ids)
+            self.free_ids.remove(record.id)
         else:
-            print("Kontakty: ")
-            for i, (name, record) in enumerate(self.data.items(), start=1):
-                print(f"{i}. {name}: {record}")
+            record.id = self.next_id
+            self.next_id += 1
+        self.data[record.id] = record
+        print(f"Dodano wpis z ID: {record.id}.")
+
+    def delete_record_by_id(self):
+        """Deletes a record based on ID."""
+        user_input = input("Podaj ID rekordu, który chcesz usunąć: ").strip()
+        record_id_str = user_input.replace("ID: ", "").strip()
+
+        try:
+            record_id = int(record_id_str)
+            if record_id in self.data:
+                del self.data[record_id]
+                self.free_ids.add(record_id)
+                print(f"Usunięto rekord o ID: {record_id}.")
+            else:
+                print("Nie znaleziono rekordu o podanym ID.")
+        except ValueError:
+            print("Nieprawidłowe ID. Proszę podać liczbę.")
 
     def find_record(self, search_term):
         """Finds entries containing the exact phrase provided."""
@@ -184,15 +182,23 @@ class AddressBook(UserDict):
             if search_term.lower() in record.name.value.lower():
                 found_records.append(record)
                 continue
-            for phone in record.phones:
-                if search_term in phone.value:
+            for phone_number in record.phone_numbers:
+                if search_term in phone_number.value:
                     found_records.append(record)
                     break
-            for email in record.emails:
-                if search_term in email.value:
+            for email_address in record.email_addresses:
+                if search_term in email_address.value:
                     found_records.append(record)
                     break
         return found_records
+
+    def find_records_by_name(self, name):
+        """Finds records that match the given name and surname."""
+        matching_records = []
+        for record_id, record in self.data.items():
+            if name.lower() in record.name.value.lower():
+                matching_records.append((record_id, record))
+        return matching_records
 
     def upcoming_birthdays(self, days):
         today = datetime.now().date()
@@ -200,9 +206,9 @@ class AddressBook(UserDict):
         print(today)
         upcoming_birthdays = []
         for record in self.data.values():
-            if record.birthday:
+            if record.birthdate:
 
-                bday = datetime.strptime(record.birthday.value, "%Y-%m-%d").date()
+                bday = datetime.strptime(record.birthdate.value, "%Y-%m-%d").date()
                 print(bday)
                 next_birthday = bday.replace(year=today.year)
                 if today > next_birthday:
@@ -216,13 +222,39 @@ class AddressBook(UserDict):
         element = ", ".join(upcoming_birthdays)
         print(f"W ciągu najblizszych {days} dni, urodziny mają: \n{element}")
 
-    def delete_record(self, name):
-        """Deletes a record by name."""
-        if name in self.data:
-            del self.data[name]
-            print(f"Usunięto wpis: {name}.")
-        else:
-            print(f"Wpis o nazwie {name} nie istnieje.")
+    def delete_record(self):
+        """Deletes the record based on the selected ID after searching by name."""
+        name_to_delete = input("Podaj imię i nazwisko osoby, którą chcesz usunąć: ")
+        matching_records = self.find_records_by_name(name_to_delete)
+
+        if not matching_records:
+            print("Nie znaleziono pasujących rekordów.")
+            return
+
+        print("Znaleziono następujące pasujące rekordy:")
+        for record_id, record in matching_records:
+            print(f"ID: {record_id}, Rekord: {record}")
+
+        try:
+            record_id_to_delete = int(input("Podaj ID rekordu, który chcesz usunąć: "))
+            if record_id_to_delete in self.data:
+                del self.data[record_id_to_delete]
+                self.free_ids.add(
+                    record_id_to_delete
+                )  # Add the ID back to the free ID pool
+                print(f"Usunięto rekord o ID: {record_id_to_delete}.")
+            else:
+                print("Nie znaleziono rekordu o podanym ID.")
+        except ValueError:
+            print("Nieprawidłowe ID. Proszę podać liczbę.")
+
+    def show_all_records(self):
+        """Displays all entries in the address book."""
+        if not self.data:
+            print("Książka adresowa jest pusta.")
+            return
+        for name, record in self.data.items():
+            print(record)
 
     def __iter__(self):
         """Returns an iterator over the address book records."""
@@ -237,18 +269,6 @@ class AddressBook(UserDict):
         else:
             raise StopIteration
 
-    def find_by_birthday_range(self, days):
-        """Finds contacts with birthdays within the specified range of days."""
-        found_contacts = []
-        for record in self.data.values():
-            days_to_birthday = record.days_to_birthday()
-            if (
-                days_to_birthday != "Brak daty urodzenia"
-                and 0 <= days_to_birthday <= days
-            ):
-                found_contacts.append(record)
-        return found_contacts
-
 
 def edit_record(book):
     """Edits an existing record in the address book."""
@@ -257,6 +277,7 @@ def edit_record(book):
         record = book.data[name_to_edit]
         print(f"Edytowanie: {name_to_edit}.")
 
+        # Name and surname edit
         new_name_input = input(
             "Podaj imię i nazwisko (wciśnij Enter żeby zachować obecne): "
         )
@@ -264,20 +285,23 @@ def edit_record(book):
             record.edit_name(Name(new_name_input))
             print("Zaktualizowano imię i nazwisko.")
 
-        if record.phones:
+        # Phone number edit
+        if record.phone_numbers:
             print("Obecne numery telefonów: ")
-            for idx, phone in enumerate(record.phones, start=1):
-                print(f"{idx}. {phone.value}")
+            for idx, phone_number in enumerate(record.phone_numbers, start=1):
+                print(f"{idx}. {phone_number.value}")
             phone_to_edit = input(
                 "Wprowadź indeks numeru telefonu który chcesz edytować "
                 "(wciśnij Enter żeby zachować obecny): "
             )
             if phone_to_edit.isdigit():
                 idx = int(phone_to_edit) - 1
-                if 0 <= idx < len(record.phones):
+                if 0 <= idx < len(record.phone_numbers):
                     new_phone_number = input("Podaj nowy numer telefonu: ")
                     if new_phone_number.strip():
-                        record.edit_phone(record.phones[idx], Phone(new_phone_number))
+                        record.edit_phone_number(
+                            record.phone_numbers[idx], PhoneNumber(new_phone_number)
+                        )
                         print("Numer telefonu zaktualizowany.")
                     else:
                         print("Nie dokonano zmian.")
@@ -288,6 +312,33 @@ def edit_record(book):
         else:
             print("Brak numerów telefonu.")
 
+        # E-mail edit
+        if record.email_addresses:
+            print("Obecne adresy e-mail: ")
+            for idx, email_address in enumerate(record.email_addresses, start=1):
+                print(f"{idx}. {email_address.value}")
+            email_to_edit = input(
+                "Wprowadź indeks adresu e-mail, który chcesz edytować "
+                "(wciśnij Enter, aby zachować obecny): "
+            )
+            if email_to_edit.isdigit():
+                idx = int(email_to_edit) - 1
+                if 0 <= idx < len(record.email_addresses):
+                    new_email = input("Podaj nowy adres e-mail: ")
+                    if new_email.strip():
+                        record.edit_email_address(
+                            record.email_addresses[idx], EmailAddress(new_email)
+                        )
+                        print("Adres e-mail zaktualizowany.")
+                    else:
+                        print("Nie dokonano zmian.")
+                else:
+                    print("Niepoprawny indeks adresu e-mail.")
+            else:
+                print("Pomięto edycję adresu e-mail.")
+        else:
+            print("Brak adresów e-mail.")
+
         print("Wpis zaktualizowany.")
     else:
         print("Wpisu nie znaleziono.")
@@ -297,9 +348,8 @@ def save_address_book(book, filename="address_book.pkl"):
     try:
         with open(filename, "wb") as file:
             pickle.dump(book.data, file)
-        print("Zapisano liste adresową.")
     except Exception as e:
-        print(f"Błąd przy zapisie liście kontaktów: {e}")
+        print(f"Błąd przy zapisie książki adresowej: {e}")
 
 
 def load_address_book(filename="address_book.pkl"):
@@ -308,17 +358,16 @@ def load_address_book(filename="address_book.pkl"):
             data = pickle.load(file)
         book = AddressBook()
         book.data = data
-        print("Witam w Osobistym asystencie.")
         return book
     except FileNotFoundError:
-        print("Plik nie istnieje, tworzenie nowej listy kontaktów.")
+        print("Plik nie istnieje, tworzenie nowej książki adresowej.")
         return AddressBook()
     except Exception as e:
-        print(f"Błąd przy ładowaniu listy kontaktów: {e}")
+        print(f"Błąd przy ładowaniu książki adresowej: {e}")
         return AddressBook()
 
 
-def input_phone():
+def input_phone_number():
     """Asks the user to enter a phone number."""
     while True:
         try:
@@ -327,19 +376,19 @@ def input_phone():
             )
             if not number:
                 return None
-            return Phone(number)
+            return PhoneNumber(number)
         except ValueError as e:
             print(e)
 
 
-def input_email():
+def input_email_address():
     """Asks the user to enter an email address."""
     while True:
         try:
             address = input("Podaj adres email (naciśnij Enter, aby pominąć): ")
             if not address:
                 return None
-            return Email(address)
+            return EmailAddress(address)
         except ValueError as e:
             print(e)
 
@@ -349,68 +398,54 @@ def create_record():
     name_input = input("Podaj imię i nazwisko: ")
     name = Name(name_input)
 
-    birthday = None
+    birthdate = None
     while True:
-        birthday_input = input(
+        birthdate_input = input(
             "Podaj datę urodzenia (YYYY-MM-DD) lub wciśnij Enter, aby pominąć: "
         )
-        if not birthday_input:
+        if not birthdate_input:
             break
         try:
-            birthday = Birthday(birthday_input)
+            birthdate = BirthDate(birthdate_input)
             break
         except ValueError as e:
             print(e)
 
-    record = Record(name, birthday)
+    record = Record(name, birthdate)
 
     while True:
         try:
-            phone_input = input(
+            phone_number_input = input(
                 "Podaj numer telefonu (lub wciśnij Enter, aby zakończyć dodawanie numerów): "
             )
-            if not phone_input:
+            if not phone_number_input:
                 break
-            phone = Phone(phone_input)
-            record.add_phone(phone)
+            phone_number = PhoneNumber(phone_number_input)
+            record.add_phone_number(phone_number)
         except ValueError as e:
             print(e)
 
     while True:
         try:
-            email_input = input(
+            email_address_input = input(
                 "Podaj adres email (lub wciśnij Enter, aby zakończyć dodawanie adresów email): "
             )
-            if not email_input:
+            if not email_address_input:
                 break
-            email = Email(email_input)
-            record.add_email(email)
+            email_address = EmailAddress(email_address_input)
+            record.add_email_address(email_address)
         except ValueError as e:
             print(e)
 
-    add_address = input("Czy chcesz dodać adres? (t/n): ").lower()
-    if add_address == "t":
+    # New functionality: Adding an address
+    add_address = input("Czy chcesz dodać adres? (t/n): ").lower().strip()
+    if add_address in ["t"]:
         street = input("Podaj ulicę: ")
         city = input("Podaj miasto: ")
         postal_code = input("Podaj kod pocztowy: ")
-        country = input("Podaj kraj: ")
-        if street and city and postal_code and country:
-            address = Address(street, city, postal_code, country)
-            record.address = address
-        else:
-            print(
-                "Nie wszystkie informacje o adresie zostały podane. Adres nie zostanie dodany."
-            )
-
-    add_note = input("Czy chcesz dodać notatkę? (t/n): ").lower()
-    if add_note == "t":
-        note_content = input("Podaj treść notatki: ")
-        if note_content.strip():
-            note = Note(note_content)
-            record.notes.append(note)
-            print("Notatka dodana.")
-        else:
-            print("Notatka nie może być pusta.")
+        country = input("Podaj nazwę państwa: ")
+        address = Address(street, city, postal_code, country)
+        record.add_address(address)
 
     return record
 
@@ -512,7 +547,7 @@ class AssistantBot:
         while True:
             action = input(
                 "Witaj w Osobistym Asystencie proszę wybrać akcje :"
-                "\n Aby wybrać kontakty wciśnij (1),"
+                "\n Aby wybrać kontatkty wciśnij (1),"
                 "\n Aby wybrać notatki (2), "
                 "\n Wyjście (3): "
             )
@@ -539,22 +574,16 @@ class AssistantBot:
                         print("Zaktualizowano kontakt.")
                     elif contact_action == "5":
                         self.book.show_all_records()
-
                     elif contact_action == "6":
-                        date = int(input("Wpisz liczbe dni w której należy wyszukać:"))
+                        date = int(input("Wpisz ilość dni w której należy wyszukać:"))
                         self.book.upcoming_birthdays(date)
 
                     elif contact_action == "7":
                         break
-                    else:
-                        print("Nie ma takiego polecenia, wybierz jeszcze raz.")
             elif action == "2":
                 while True:
                     notes_action = input(
-                        "Wybierz działanie: \nDodaj notatkę (1), \nWyświetl notatki (2), \nEdytuj notatkę (3),"
-                        "\nUsuń notatkę (4), \nZapisz notatki (5), \nWczytaj notatki (6),"
-                        "\nDodaj tag do notatki (7), \nZnajdź notatkę po tagu (8), \nPosortuj notatki według tagów (9),"
-                        "\nWróć (0)"
+                        "Wybierz działanie: \nDodaj notatkę (1), Wyświetl notatki (2), Edytuj notatkę (3), Usuń notatkę (4), Zapisz notatki (5), Wczytaj notatki (6), Dodaj tag do notatki (7), Znajdź notatkę po tagu (8), Posortuj notatki według tagów (9), Wróć (0)"
                     )
 
                     if notes_action == "1":
@@ -603,6 +632,7 @@ class AssistantBot:
                 break
             else:
                 print("Nie ma takiego polecenia, wybierz jeszcze raz")
+
         save_address_book(self.book)
         self.notebook.save_notes()
 
